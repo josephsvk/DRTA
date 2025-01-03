@@ -3,6 +3,11 @@ services:
     build:
       context: .  # Cesta k priečinku s Dockerfile
     container_name: DRTA-Client
-    env_file:
-      - .env
+    volumes:
+      - ./form.py:/app/form.py  # Mapovanie form.py
+      - ./form_data.json:/app/form_data.json  # Mapovanie form_data.json
+    working_dir: /app
+    stdin_open: true  # Povoliť štandardný vstup
+    tty: true         # Povoliť TTY
+    command: ["python", "form.py"]  # Spustiť formulár
     restart: unless-stopped

@@ -2,7 +2,6 @@ import os
 import subprocess
 import json
 
-# Function to get the MAC address
 def get_mac_address():
     try:
         result = subprocess.run(
@@ -16,7 +15,6 @@ def get_mac_address():
     except subprocess.CalledProcessError:
         return None
 
-# Function to generate SSH key
 def generate_ssh_key(filename, comment):
     try:
         key_cmd = f'ssh-keygen -t ed25519 -C "{comment}" -f {filename} -N ""'
@@ -24,7 +22,6 @@ def generate_ssh_key(filename, comment):
     except subprocess.CalledProcessError as e:
         print(f"Error generating SSH key: {e}")
 
-# Function to save data to a JSON file
 def save_to_json(data, filename="form_data.json"):
     try:
         with open(filename, "w") as json_file:
@@ -33,7 +30,18 @@ def save_to_json(data, filename="form_data.json"):
     except Exception as e:
         print(f"Error saving data: {e}")
 
-# Step-by-step interactive form
+def configure_agent():
+    print("Starting agent configuration...")
+    try:
+        with open("form_data.json", "r") as json_file:
+            data = json.load(json_file)
+        print("Configuration loaded successfully.")
+        # Simulate connection to server
+        print(f"Connecting to server with MAC: {data['mac_address']}, IPv6: {data['ipv6_prefix']}, Port: {data['port']}")
+        # Add logic for server interaction here
+    except Exception as e:
+        print(f"Error during agent configuration: {e}")
+
 def main():
     print("Welcome to the Agent Identity Setup!")
     print("Please follow the steps to configure the agent.")
@@ -59,11 +67,9 @@ def main():
     location = input("Enter the location: ")
     function = input("Enter the function: ")
 
-    # Generate SSH key
     key_filename = f"{device_name}_id_ed25519"
     generate_ssh_key(key_filename, mac_address)
 
-    # Save data
     data = {
         "mac_address": mac_address,
         "device_name": device_name,
@@ -74,14 +80,8 @@ def main():
     }
     save_to_json(data)
 
-    print("\nConfiguration completed!")
-    print(f"MAC Address: {mac_address}")
-    print(f"Device Name: {device_name}")
-    print(f"IPv6 Prefix: {ipv6_prefix}")
-    print(f"Port: {port}")
-    print(f"Location: {location}")
-    print(f"Function: {function}")
-    print(f"SSH Key saved as: {key_filename}")
+    print("\nConfiguration completed! Proceeding with agent configuration...")
+    configure_agent()
 
 if __name__ == "__main__":
     main()

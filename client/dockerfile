@@ -1,5 +1,15 @@
-FROM python:3.11-slim
+# Base image
+FROM python:3.9-slim
+
+# Set working directory
 WORKDIR /app
-COPY form.py /app/form.py
-RUN apt-get update && apt-get install -y openssh-client && pip install npyscreen
+
+# Copy necessary files
+COPY form.py /app/
+COPY form_data.json /app/
+
+# Install dependencies (ak sú potrebné)
+RUN pip install --no-cache-dir -r requirements.txt || echo "No dependencies specified"
+
+# Default command
 CMD ["python", "form.py"]
