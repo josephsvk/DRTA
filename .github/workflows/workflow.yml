@@ -1,0 +1,17 @@
+name: Access Secret Key
+
+on:
+    pull_request:
+        branches:
+            - master
+
+jobs:
+  show-secret:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print secret key
+        env:
+          TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
+        run: |
+          echo "Your secret key is: $TOTP_SECRET"

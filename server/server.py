@@ -1,11 +1,15 @@
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pyotp
 
 app = FastAPI()
 
-# TOTP shared secret (toto by malo byť uložené bezpečne)
-SHARED_SECRET = "JBSWY3DPEHPK3PXP"  # Zmeň na svoj tajný kľúč
+# Načítanie tajného kľúča z prostredia
+SHARED_SECRET = os.getenv("TOTP_SECRET")
+if not SHARED_SECRET:
+    raise ValueError("TOTP_SECRET environment variable not set")
+
 
 class TOTPRequest(BaseModel):
     code: str
