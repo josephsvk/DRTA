@@ -2,10 +2,13 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pyotp
+from dotenv import load_dotenv
+
+# Načítanie .env súboru
+load_dotenv()
 
 app = FastAPI()
 
-# Načítanie tajného kľúča z prostredia
 SHARED_SECRET = os.getenv("TOTP_SECRET")
 if not SHARED_SECRET:
     raise ValueError("TOTP_SECRET environment variable not set")
