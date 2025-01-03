@@ -1,17 +1,28 @@
-name: Access Secret Key
+name: Build and Run TOTP Server with Docker Compose
 
 on:
-    pull_request:
-        branches:
-            - master
+  workflow_dispatch: # Manuálne spustenie workflowu
 
 jobs:
-  show-secret:
+  build-and-run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print secret key
-        env:
-          TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
+      # 1. Checkout kódu z repozitára
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Nastavenie environmentálneho súboru
+      - name: Setup .env file
         run: |
-          echo "Your secret key is: $TOTP_SECRET"
+          echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > .env
+
+      # 3. Build a spustenie kontajnera pomocou Docker Compose
+      - name: Build and run with Docker Compose
+        run: |
+          docker-compose up -d --build
+
+      # 4. Overenie bežiaceho kontajnera
+      - name: Check running services
+        run: |
+          docker ps
