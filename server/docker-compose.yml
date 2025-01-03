@@ -4,7 +4,6 @@ services:
   totp-server:
     build:
       context: .  # Cesta k priečinku s Dockerfile
-      dockerfile: Dockerfile  # Môžeš vynechať, ak sa súbor volá "Dockerfile"
     container_name: totp-server
     ports:
       - "8000:8000"

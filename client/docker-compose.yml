@@ -1,0 +1,8 @@
+services:
+  drta-client:
+    build:
+      context: .  # Cesta k priečinku s Dockerfile
+    container_name: DRTA-Client
+    env_file:
+      - .env
+    restart: unless-stopped
