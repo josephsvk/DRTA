@@ -36,7 +36,7 @@ def verify_totp():
 
 def send_form_data():
     file_path = "form_data.json"
-    upload_url = os.getenv("UPLOAD_URL", "http://127.0.0.1:8000/upload")
+    upload_url = os.getenv("UPLOAD_URL", "http://0.0.0.0:8000/upload")
     
     try:
         with open(file_path, "rb") as file:
