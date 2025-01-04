@@ -7,7 +7,7 @@ import os
 load_dotenv()
 
 def verify_totp():
-    url = os.getenv("TOTP_URL", "http://127.0.0.1:8000/verify-totp")
+    url = os.getenv("TOTP_URL", "http://0.0.0.0:8000/verify-totp")
     headers = {"Content-Type": "application/json"}
 
     while True:
