@@ -1,5 +1,6 @@
 server/.env
-client/form_data.json
 /.ssh
-bak
-form_data.json.bak
+*.bak
+
+
+client/form_data.json

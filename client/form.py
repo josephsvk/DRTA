@@ -4,7 +4,10 @@ import json
 import shutil
 
 # Define the directory for SSH keys
-SSH_DIR = os.path.join(os.getcwd(), ".ssh")
+SSH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".ssh")
+
+# Configuration file for prefixes
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 # Ensure the directory exists
 def ensure_ssh_dir():
@@ -40,41 +43,66 @@ def generate_ssh_key(filename, comment):
 # Function to save data to a JSON file with backup
 def save_to_json(data, filename="form_data.json"):
     """
-    Save the given data to a JSON file.
+    Save the given data to a JSON file in the script's directory.
     Creates a backup of the existing file if it exists.
 
     :param data: Data to save in JSON format.
     :param filename: Name of the JSON file to save to.
     """
     try:
-        if os.path.exists(filename):
-            backup_filename = filename + ".bak"
-            shutil.copy(filename, backup_filename)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, filename)
+        
+        if os.path.exists(file_path):
+            backup_filename = file_path + ".bak"
+            shutil.copy(file_path, backup_filename)
             print(f"[INFO] Backup of existing file created: {backup_filename}")
         
-        print(f"[DEBUG] Saving data to {filename}")
-        with open(filename, "w") as json_file:
+        print(f"[DEBUG] Saving data to {file_path}")
+        with open(file_path, "w") as json_file:
             json.dump(data, json_file, indent=4)
-        print(f"[INFO] Data saved to {filename}")
+        print(f"[INFO] Data saved to {file_path}")
     except Exception as e:
         print(f"[ERROR] Error saving data: {e}")
+
+# Function to load prefixes from configuration file
+def load_prefixes():
+    """
+    Load IPv6 prefixes from a configuration file.
+
+    :return: List of prefixes or default prefixes if the file is not found.
+    """
+    default_prefixes = ["fd:fc:fb:fa::/48", "fd:ab:cd:ef::/48", "Custom"]
+    try:
+        with open(CONFIG_FILE, "r") as config_file:
+            config = json.load(config_file)
+            return config.get("prefixes", default_prefixes)
+    except FileNotFoundError:
+        print(f"[INFO] Configuration file not found. Using default prefixes.")
+        return default_prefixes
+    except Exception as e:
+        print(f"[ERROR] Error loading prefixes from configuration file: {e}")
+        return default_prefixes
 
 # Function to load existing JSON configuration
 def load_existing_json(filename="form_data.json"):
     """
-    Load existing configuration data from a JSON file.
+    Load existing configuration data from a JSON file in the script's directory.
 
     :param filename: Name of the JSON file to load.
     :return: Loaded data or None if the file does not exist or an error occurs.
     """
     try:
-        print(f"[DEBUG] Attempting to load existing configuration from {filename}")
-        with open(filename, "r") as json_file:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, filename)
+
+        print(f"[DEBUG] Attempting to load existing configuration from {file_path}")
+        with open(file_path, "r") as json_file:
             data = json.load(json_file)
-            print(f"[INFO] Loaded existing configuration from {filename}")
+            print(f"[INFO] Loaded existing configuration from {file_path}")
             return data
     except FileNotFoundError:
-        print(f"[INFO] No existing configuration found at {filename}.")
+        print(f"[INFO] No existing configuration found at {file_path}.")
         return None
     except Exception as e:
         print(f"[ERROR] Error loading configuration: {e}")
@@ -101,14 +129,22 @@ def main():
     # Ensure SSH directory exists
     ensure_ssh_dir()
 
-    device_name = input("Enter the device name: ")
+    while True:
+        device_name = input("Enter the device name: ").strip()
+        if not device_name:
+            print("[ERROR] Device name cannot be empty. Please try again.")
+            continue
+        if any(char in device_name for char in "<>:""/\\|?*"):
+            print("[ERROR] Device name contains invalid characters. Please try again.")
+            continue
+        break
 
     print("Select IPv6 prefix:")
-    prefixes = ["fd:fc:fb:fa::/48", "fd:ab:cd:ef::/48", "Custom"]
+    prefixes = load_prefixes()
     for i, prefix in enumerate(prefixes, start=1):
         print(f"{i}. {prefix}")
-    prefix_choice = input("Enter your choice (1-3): ")
-    if prefix_choice == "3":
+    prefix_choice = input(f"Enter your choice (1-{len(prefixes)}): ")
+    if prefix_choice == str(len(prefixes)):
         ipv6_prefix = input("Enter your custom IPv6 prefix: ")
     else:
         ipv6_prefix = prefixes[int(prefix_choice) - 1]

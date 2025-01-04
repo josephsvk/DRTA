@@ -1,8 +1,7 @@
 {
-    "mac_address": "test",
     "device_name": "test",
     "ipv6_prefix": "fd:fc:fb:fa::/48",
     "port": "22",
     "location": "test",
-    "function": "test"
+    "function": "tes1"
 }
