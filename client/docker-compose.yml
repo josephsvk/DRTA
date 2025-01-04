@@ -1,12 +1,10 @@
 services:
   drta-client:
     build:
-      context: .  # Cesta k priečinku s Dockerfile
     container_name: DRTA-Client
     volumes:
-      - .:/app  # Mapovanie celého priečinka do kontajnera
+      - .:/app  # Map the entire directory to the container
     working_dir: /app
-    stdin_open: true  # Povoliť štandardný vstup
-    tty: true         # Povoliť TTY
-    command: ["python", "main.py"]  # Spustiť formulár
+    stdin_open: true  # Enable standard input
+    tty: true         # Enable TTY
     restart: unless-stopped

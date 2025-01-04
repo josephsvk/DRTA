@@ -1,55 +1,105 @@
 import os
 import subprocess
 import json
+import shutil
 
-def get_mac_address():
+# Define the directory for SSH keys
+SSH_DIR = os.path.join(os.getcwd(), ".ssh")
+
+# Ensure the directory exists
+def ensure_ssh_dir():
+    """
+    Create the SSH directory if it does not exist.
+    Handles permissions and other exceptions during directory creation.
+    """
     try:
-        result = subprocess.run(
-            "ip link | awk '/state UP/ {getline; print $2}'",
-            shell=True,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        return result.stdout.decode().strip()
-    except subprocess.CalledProcessError:
-        return None
+        os.makedirs(SSH_DIR, exist_ok=True)
+        print(f"[INFO] SSH directory ensured at: {SSH_DIR}")
+    except PermissionError:
+        print(f"[ERROR] Permission denied: Unable to create SSH directory at {SSH_DIR}")
+    except Exception as e:
+        print(f"[ERROR] Error creating SSH directory: {e}")
 
+# Function to generate SSH key
 def generate_ssh_key(filename, comment):
-    try:
-        key_cmd = f'ssh-keygen -t ed25519 -C "{comment}" -f {filename} -N ""'
-        subprocess.run(key_cmd, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error generating SSH key: {e}")
+    """
+    Generate an SSH key using ssh-keygen.
 
-def save_to_json(data, filename="form_data.json"):
+    :param filename: Name of the key file to be created.
+    :param comment: Comment associated with the key for identification.
+    """
     try:
+        key_path = os.path.join(SSH_DIR, filename)
+        print(f"[DEBUG] Generating SSH key at {key_path} with comment '{comment}'")
+        key_cmd = ["ssh-keygen", "-t", "ed25519", "-C", comment, "-f", key_path, "-N", ""]
+        subprocess.run(key_cmd, check=True)
+        print(f"[INFO] SSH key generated and saved to {key_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Error generating SSH key: {e}")
+
+# Function to save data to a JSON file with backup
+def save_to_json(data, filename="form_data.json"):
+    """
+    Save the given data to a JSON file.
+    Creates a backup of the existing file if it exists.
+
+    :param data: Data to save in JSON format.
+    :param filename: Name of the JSON file to save to.
+    """
+    try:
+        if os.path.exists(filename):
+            backup_filename = filename + ".bak"
+            shutil.copy(filename, backup_filename)
+            print(f"[INFO] Backup of existing file created: {backup_filename}")
+        
+        print(f"[DEBUG] Saving data to {filename}")
         with open(filename, "w") as json_file:
             json.dump(data, json_file, indent=4)
-        print(f"Data saved to {filename}")
+        print(f"[INFO] Data saved to {filename}")
     except Exception as e:
-        print(f"Error saving data: {e}")
+        print(f"[ERROR] Error saving data: {e}")
 
-def configure_agent():
-    print("Starting agent configuration...")
+# Function to load existing JSON configuration
+def load_existing_json(filename="form_data.json"):
+    """
+    Load existing configuration data from a JSON file.
+
+    :param filename: Name of the JSON file to load.
+    :return: Loaded data or None if the file does not exist or an error occurs.
+    """
     try:
-        with open("form_data.json", "r") as json_file:
+        print(f"[DEBUG] Attempting to load existing configuration from {filename}")
+        with open(filename, "r") as json_file:
             data = json.load(json_file)
-        print("Configuration loaded successfully.")
-        # Simulate connection to server
-        print(f"Connecting to server with MAC: {data['mac_address']}, IPv6: {data['ipv6_prefix']}, Port: {data['port']}")
-        # Add logic for server interaction here
+            print(f"[INFO] Loaded existing configuration from {filename}")
+            return data
+    except FileNotFoundError:
+        print(f"[INFO] No existing configuration found at {filename}.")
+        return None
     except Exception as e:
-        print(f"Error during agent configuration: {e}")
+        print(f"[ERROR] Error loading configuration: {e}")
+        return None
 
+# Step-by-step interactive form
 def main():
-    print("Welcome to the Agent Identity Setup!")
+    """
+    Main function to guide the user through the agent setup process.
+    Allows users to load existing configurations or create new ones.
+    """
+    print("[INFO] Welcome to the Agent Identity Setup!")
     print("Please follow the steps to configure the agent.")
-    
-    mac_address = get_mac_address()
-    if not mac_address:
-        print("Unable to retrieve MAC address.")
-        mac_address = input("Please enter the MAC address manually: ")
+
+    # Check for existing configuration
+    existing_data = load_existing_json()
+    if existing_data:
+        use_existing = input("Found an existing configuration. Do you want to use it? (yes/no): ").strip().lower()
+        if use_existing == "yes":
+            print("[INFO] Using existing configuration.")
+            print(json.dumps(existing_data, indent=4))
+            return
+
+    # Ensure SSH directory exists
+    ensure_ssh_dir()
 
     device_name = input("Enter the device name: ")
 
@@ -67,11 +117,12 @@ def main():
     location = input("Enter the location: ")
     function = input("Enter the function: ")
 
+    # Generate SSH key
     key_filename = f"{device_name}_id_ed25519"
-    generate_ssh_key(key_filename, mac_address)
+    generate_ssh_key(key_filename, device_name)
 
+    # Save data
     data = {
-        "mac_address": mac_address,
         "device_name": device_name,
         "ipv6_prefix": ipv6_prefix,
         "port": port,
@@ -80,8 +131,12 @@ def main():
     }
     save_to_json(data)
 
-    print("\nConfiguration completed! Proceeding with agent configuration...")
-    configure_agent()
+    print("[INFO] Configuration completed!")
+    print(f"Device Name: {device_name}")
+    print(f"IPv6 Prefix: {ipv6_prefix}")
+    print(f"Port: {port}")
+    print(f"Location: {location}")
+    print(f"Function: {function}")
 
 if __name__ == "__main__":
     main()
