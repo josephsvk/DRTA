@@ -2,4 +2,3 @@ fastapi
 uvicorn
 pyotp
 python-dotenv
-flask
