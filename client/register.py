@@ -2,7 +2,7 @@ import requests
 import json
 
 def verify_totp():
-    url = "http://127.0.0.1:8000/verify-totp"
+    url = "http://0.0.0.0:8000/verify-totp"
     headers = {"Content-Type": "application/json"}
 
     while True:
