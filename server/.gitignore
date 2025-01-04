@@ -1,3 +1,6 @@
+#citlive subory
 .env
+*.log
+*.pem
 /.ssh
 form_data.json

@@ -1,4 +1,7 @@
 import os
+import urllib3
+import json
+import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pyotp
@@ -13,6 +16,13 @@ app = FastAPI()
 
 # Load environment variables from a .env file, if available. This ensures sensitive data can be stored outside the codebase.
 load_dotenv()
+
+# Determine the environment (local or production).
+env = os.getenv("ENV", "production")
+verify_ssl = False if env == "local" else True
+
+# Disable SSL warnings to avoid warnings when making requests to servers with self-signed certificates.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Retrieve the TOTP shared secret key from the environment variables.
 SHARED_SECRET = os.getenv("TOTP_SECRET")
@@ -54,5 +64,14 @@ def upload():
 
 if __name__ == "__main__":
     print("Starting Flask server with SSL.")  # Debug log for server start.
+    # Example request for debugging SSL behavior.
+    url = "https://example.com/test"
+    headers = {"Content-Type": "application/json"}
+    payload = {"key": "value"}
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload), verify=verify_ssl)
+        print(f"Request response: {response.status_code}, {response.text}")  # Debug log for request response.
+    except Exception as e:
+        print(f"Error making request: {e}")  # Debug log for errors.
     # Run the Flask application with SSL context for secure communication.
     flask_app.run(ssl_context=('cert.pem', 'key.pem'))
