@@ -7,7 +7,7 @@ import os
 load_dotenv()
 
 def verify_totp():
-    url = os.getenv("TOTP_URL", "http://0.0.0.0:8000/verify-totp")
+    url = os.getenv("TOTP_URL", "https://0.0.0.0:8000/verify-totp")
     headers = {"Content-Type": "application/json"}
 
     while True:
@@ -36,7 +36,7 @@ def verify_totp():
 
 def send_form_data():
     file_path = "form_data.json"
-    upload_url = os.getenv("UPLOAD_URL", "http://0.0.0.0:8000/upload")
+    upload_url = os.getenv("UPLOAD_URL", "https://0.0.0.0:8000/upload")
     
     try:
         with open(file_path, "rb") as file:

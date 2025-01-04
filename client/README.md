@@ -30,6 +30,7 @@ sudo docker run -it --rm --name test-drta-client client-drta-client bash
 ### logs : 
 docker logs DRTA-Client
 docker info
+docker-compose config
 
 ### Dôležité:
 Ak chcete, aby formulár bežal na vašu konzolu, zadajte príkaz runnamiesto up.
