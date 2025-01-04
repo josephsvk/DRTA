@@ -22,6 +22,14 @@ def run_agent():
     subprocess.run([sys.executable, "agent.py"], check=True)
 
 
+def run_register():
+    """
+    Spustí registračný skript.
+    """
+    print("Running registration script...")
+    subprocess.run([sys.executable, "register.py"], check=True)
+
+
 def load_config():
     """
     Načíta konfiguráciu z form_data.json.
@@ -77,6 +85,9 @@ def main():
             return
         elif sys.argv[1] == "--run":
             run_agent()
+            return
+        elif sys.argv[1] == "--register":
+            run_register()
             return
 
     config = load_config()

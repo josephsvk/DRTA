@@ -1,0 +1,16 @@
+# Ignorovať Git metadáta
+.git
+.gitignore
+
+# Logy a dočasné súbory
+*.log
+*.bak
+*.swp
+*.tmp
+
+# Ignorovať citlivé údaje
+.env
+
+# Ignorovať Docker súbory, ak nie sú potrebné v kontajneri
+docker-compose.yml
+dockerfile

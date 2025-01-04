@@ -1,8 +1,21 @@
+### Common prompt 
 
-
+**Run the setup form:**     
+```**bash**
+sudo docker compose run drta-client --setup
+```
+**Run the agent:**  
+```markdown
+sudo docker compose run drta-client --run
+```
+**Run the registration script:**    
+```console
+sudo docker compose run drta-client --register
+```
 ### Príkaz docker compose run umožňuje interaktívny prístup ku kontajneru. Spustite kontajner nasledovne:
+```console
 sudo docker compose run drta-client
-
+```
 
 ### Ak je kontajner spustený, môžete sa pripojiť k bežiacemu kontajneru pomocou:
 sudo docker compose up
