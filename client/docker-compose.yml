@@ -1,6 +1,6 @@
 services:
   drta-client:
-    build:
+    build: .
     container_name: DRTA-Client
     volumes:
       - .:/app  # Map the entire directory to the container
