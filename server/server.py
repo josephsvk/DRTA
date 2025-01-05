@@ -64,8 +64,8 @@ if __name__ == "__main__":
     payload = {"key": "value"}
 
     # Use temporary certificates directly from the project root directory.
-    cert_file = "./certs/cert.pem" #server/certs/cert.pem
-    key_file = "./certs/key.pem"
+    cert_file = "cert.pem" #server/certs/cert.pem
+    key_file = "key.pem"
 
     # Verify the existence of certificates
     if not os.path.exists(cert_file) or not os.path.exists(key_file):

@@ -11,9 +11,6 @@ RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip install --no-cache-dir -v -r requirements.txt --root-user-action=ignore
 
-# Copy necessary files
-COPY . /app
-
 # Kopírovanie aplikácie
 COPY server.py .
 

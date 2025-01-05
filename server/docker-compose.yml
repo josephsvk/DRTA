@@ -4,6 +4,7 @@ services:
   totp-server:
     build:
       context: .  # Cesta k priečinku s Dockerfile
+      dockerfile: Dockerfile
     container_name: totp-server
     ports:
       - "8443:443"
@@ -12,5 +13,4 @@ services:
       - .env
     volumes:
       - .:/app  # Map the entire directory to the container
-      - ./certs:/certs
     restart: unless-stopped
