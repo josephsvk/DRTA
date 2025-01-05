@@ -9,8 +9,11 @@
 *.tmp
 
 # Ignorovať citlivé údaje
-.env
+
 
 # Ignorovať Docker súbory, ak nie sú potrebné v kontajneri
 docker-compose.yml
 dockerfile
+
+#README.md
+README.md

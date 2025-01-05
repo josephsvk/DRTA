@@ -63,9 +63,9 @@ if __name__ == "__main__":
     headers = {"Content-Type": "application/json"}
     payload = {"key": "value"}
 
-    # Use temporary certificates directly from the project root directory.
-    cert_file = "cert.pem" #server/certs/cert.pem
-    key_file = "key.pem"
+    # Use local certificates directly from the root directory.
+    cert_file = "./local-cert.pem"
+    key_file = "./local-key.pem"
 
     # Verify the existence of certificates
     if not os.path.exists(cert_file) or not os.path.exists(key_file):
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error making request: {e}")  # Debug log for errors.
     # Run the FastAPI application with SSL context for secure communication.
-    uvicorn.run(app, host="127.0.0.1", port=443, ssl_certfile=cert_file, ssl_keyfile=key_file)
+    uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile=cert_file, ssl_keyfile=key_file)

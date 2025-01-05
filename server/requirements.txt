@@ -4,3 +4,4 @@ pyotp
 python-dotenv
 urllib3
 requests
+python-multipart
