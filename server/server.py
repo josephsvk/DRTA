@@ -76,4 +76,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error making request: {e}")  # Debug log for errors.
     # Run the Flask application with SSL context for secure communication.
-    flask_app.run(ssl_context=('cert.pem', 'key.pem'))
+    flask_app.run(host="127.0.0.1", ssl_context=('cert.pem', 'key.pem'))

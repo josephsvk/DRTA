@@ -6,7 +6,7 @@ services:
       context: .  # Cesta k priečinku s Dockerfile
     container_name: totp-server
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8443:443"  # Presmerujte SSL port na lokálnu adresu
     env_file:
       - .env
     restart: unless-stopped
