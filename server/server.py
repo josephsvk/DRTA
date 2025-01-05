@@ -2,7 +2,7 @@ import os
 import urllib3
 import json
 import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 import pyotp
 from dotenv import load_dotenv
@@ -34,11 +34,13 @@ class TOTPRequest(BaseModel):
     code: str  # The TOTP code submitted by the user.
 
 @app.post("/verify-totp")
-async def verify_totp(request: TOTPRequest):
+async def verify_totp(request: TOTPRequest, raw_request: Request):
     """Endpoint to verify a submitted TOTP code.
     Uses pyotp to validate the provided code against the shared secret.
     """
     print("Received TOTP verification request.")  # Debug log for incoming requests.
+    print(f"Headers: {raw_request.headers}")  # Log request headers for debugging.
+    print(f"Body: {await raw_request.body()}")  # Log request body for debugging.
     totp = pyotp.TOTP(SHARED_SECRET)  # Initialize the TOTP instance with the shared secret.
     if totp.verify(request.code):  # Check if the submitted code is valid.
         print("TOTP verification succeeded.")  # Debug log for successful validation.
