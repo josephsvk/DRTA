@@ -11,5 +11,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./certs:/certs  # Certifikáty v koreňovom priečinku
+      - .:/app  # Map the entire directory to the container
+      - ./certs:/certs
     restart: unless-stopped
