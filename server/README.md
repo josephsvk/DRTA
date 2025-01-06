@@ -11,3 +11,7 @@ sudo docker compose up
 ```console
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
 ```
+### Run interactive container 
+```console
+ocker compose exec -it totop-server bash
+```

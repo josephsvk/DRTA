@@ -2,14 +2,10 @@ import os
 import urllib3
 import json
 import requests
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 import pyotp
 from dotenv import load_dotenv
-from flask import Flask, request
-
-# Flask instance for handling file uploads. Flask is used here for simplicity in handling multipart/form-data.
-flask_app = Flask(__name__)
 
 # FastAPI instance for handling API requests. FastAPI provides a modern and high-performance API framework.
 app = FastAPI()
@@ -34,13 +30,11 @@ class TOTPRequest(BaseModel):
     code: str  # The TOTP code submitted by the user.
 
 @app.post("/verify-totp")
-async def verify_totp(request: TOTPRequest, raw_request: Request):
+async def verify_totp(request: TOTPRequest):
     """Endpoint to verify a submitted TOTP code.
     Uses pyotp to validate the provided code against the shared secret.
     """
     print("Received TOTP verification request.")  # Debug log for incoming requests.
-    print(f"Headers: {raw_request.headers}")  # Log request headers for debugging.
-    print(f"Body: {await raw_request.body()}")  # Log request body for debugging.
     totp = pyotp.TOTP(SHARED_SECRET)  # Initialize the TOTP instance with the shared secret.
     if totp.verify(request.code):  # Check if the submitted code is valid.
         print("TOTP verification succeeded.")  # Debug log for successful validation.
@@ -49,31 +43,38 @@ async def verify_totp(request: TOTPRequest, raw_request: Request):
         print("TOTP verification failed.")  # Debug log for failed validation.
         raise HTTPException(status_code=400, detail="Invalid TOTP code")  # Raise an error for invalid codes.
 
-@flask_app.route('/upload', methods=['POST'])
-def upload():
-    """Endpoint to upload a file through Flask.
-    Checks if a file is included in the request and saves it locally.
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    """Endpoint to upload a file through FastAPI.
+    Saves the uploaded file locally.
     """
     print("Upload endpoint called.")  # Debug log for endpoint invocation.
-    if 'file' not in request.files:  # Verify that a file is included in the request.
-        print("No file found in the request.")  # Debug log for missing file.
-        return {"error": "No file uploaded"}, 400  # Return an error if no file is uploaded.
-    file = request.files['file']  # Retrieve the file from the request.
-    print(f"File received: {file.filename}")  # Debug log for received file name.
-    file.save(file.filename)  # Save the uploaded file to the local filesystem.
+    file_location = f"./{file.filename}"
+    with open(file_location, "wb") as f:
+        f.write(await file.read())
     print(f"File saved: {file.filename}")  # Debug log for file save success.
-    return {"message": "File uploaded successfully"}, 200  # Return a success message.
+    return {"message": "File uploaded successfully"}  # Return a success message.
 
 if __name__ == "__main__":
-    print("Starting Flask server with SSL.")  # Debug log for server start.
+    import uvicorn
+    print("Starting FastAPI server with SSL.")  # Debug log for server start.
     # Example request for debugging SSL behavior.
     url = "https://example.com/test"
     headers = {"Content-Type": "application/json"}
     payload = {"key": "value"}
+
+    # Use local certificates directly from the root directory.
+    cert_file = "./local-cert.pem"
+    key_file = "./local-key.pem"
+
+    # Verify the existence of certificates
+    if not os.path.exists(cert_file) or not os.path.exists(key_file):
+        raise FileNotFoundError(f"Missing SSL certificate files: {cert_file}, {key_file}")
+
     try:
         response = requests.post(url, headers=headers, data=json.dumps(payload), verify=verify_ssl)
         print(f"Request response: {response.status_code}, {response.text}")  # Debug log for request response.
     except Exception as e:
         print(f"Error making request: {e}")  # Debug log for errors.
-    # Run the Flask application with SSL context for secure communication.
-    flask_app.run(host="127.0.0.1", ssl_context=('cert.pem', 'key.pem'))
+    # Run the FastAPI application with SSL context for secure communication.
+    uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile=cert_file, ssl_keyfile=key_file)

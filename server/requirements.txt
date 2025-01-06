@@ -2,6 +2,6 @@ fastapi
 uvicorn
 pyotp
 python-dotenv
-flask
 urllib3
 requests
+python-multipart
