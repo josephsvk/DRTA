@@ -8,7 +8,7 @@ load_dotenv()
 
 def verify_totp():
     # Retrieve the TOTP URL from environment variables or use the default
-    url = os.getenv("TOTP_URL", "https://localhost:8443/verify-totp")
+    url = os.getenv("TOTP_URL", "https://127.0.0.1:8000/verify-totp")
     headers = {"Content-Type": "application/json"}  # Set the request headers
 
     while True:
