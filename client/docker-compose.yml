@@ -1,10 +1,15 @@
+version: '3.8'
+
 services:
   drta-client:
-    build: .
+    build: 
+      context: .
+      dockerfile: dockerfile
     container_name: DRTA-Client
-    volumes:
-      - .:/app  # Map the entire directory to the container
-    working_dir: /app
     stdin_open: true  # Enable standard input
     tty: true         # Enable TTY
     restart: unless-stopped
+networks:
+  default:
+    driver: bridge
+    

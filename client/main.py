@@ -2,9 +2,9 @@ import os
 import subprocess
 import json
 import sys
+import argparse
 
 CONFIG_FILE = "form_data.json"
-
 
 def run_form():
     """
@@ -13,7 +13,6 @@ def run_form():
     print("Running setup form...")
     subprocess.run([sys.executable, "form.py"], check=True)
 
-
 def run_agent():
     """
     Spustí agenta na udržiavanie spojenia.
@@ -21,14 +20,12 @@ def run_agent():
     print("Starting agent...")
     subprocess.run([sys.executable, "agent.py"], check=True)
 
-
 def run_register():
     """
     Spustí registračný skript.
     """
     print("Running registration script...")
     subprocess.run([sys.executable, "register.py"], check=True)
-
 
 def load_config():
     """
@@ -77,34 +74,30 @@ def main():
     """
     Hlavná logika pre rozhodovanie.
     """
-    print("Starting main program...")
+    parser = argparse.ArgumentParser(description="Program for managing setup, agents, and registration.")
+    parser.add_argument("--setup", action="store_true", help="Run the setup form.")
+    parser.add_argument("--run", action="store_true", help="Run the agent.")
+    parser.add_argument("--register", action="store_true", help="Run the registration script.")
+    parser.add_argument("--idle", action="store_true", help="Run in idle mode (do nothing).")
 
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "--setup":
-            run_form()
-            return
-        elif sys.argv[1] == "--run":
-            run_agent()
-            return
-        elif sys.argv[1] == "--register":
-            run_register()
-            return
+    args = parser.parse_args()
 
-    config = load_config()
-
-    if not config:
-        print("No configuration found. Starting setup...")
+    if args.setup:
         run_form()
-        config = load_config()
-        if not config:
-            print("Setup failed. Exiting.")
-            return
+        sys.exit()
+    elif args.run:
+        run_agent()
+        sys.exit()
+    elif args.register:
+        run_register()
+        sys.exit()
+    elif args.idle:
+        print("Idle mode activated. Container is running but not performing any tasks.")
+        while True:
+            pass  # Keeps the container running in idle mode
 
-    if not validate_totp():
-        print("TOTP validation failed. Exiting.")
-        return
-
-    exchange_keys_with_server(config)
+    print("No valid argument provided. Use --setup, --run, --register, or --idle.")
+    sys.exit()
 
 if __name__ == "__main__":
     main()

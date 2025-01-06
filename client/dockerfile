@@ -5,10 +5,12 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copy necessary files
-COPY . /app
+COPY . .
 
 # Install dependencies (ak sú potrebné)
-RUN pip install --no-cache-dir -r requirements.txt || echo "No dependencies specified"
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -v -r requirements.txt --root-user-action=ignore
+RUN apt-get update && apt-get install -y openssh-client
 
 # Default command
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "main.py", "--idle"]
