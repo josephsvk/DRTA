@@ -14,5 +14,6 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -v -r requirements.txt --root-user-action=ignore
 
 # Run the application
-ENTRYPOINT ["python", "server.py"]
+#--https --openssl
+ENTRYPOINT ["python", "server.py", "--https"] 
 

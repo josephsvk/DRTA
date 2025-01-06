@@ -6,6 +6,10 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 import pyotp
 from dotenv import load_dotenv
+import sys
+import uvicorn
+import ssl
+import socket
 
 # FastAPI instance for handling API requests. FastAPI provides a modern and high-performance API framework.
 app = FastAPI()
@@ -55,15 +59,16 @@ async def upload(file: UploadFile = File(...)):
     print(f"File saved: {file.filename}")  # Debug log for file save success.
     return {"message": "File uploaded successfully"}  # Return a success message.
 
-if __name__ == "__main__":
-    import uvicorn
-    print("Starting FastAPI server with SSL.")  # Debug log for server start.
-    # Example request for debugging SSL behavior.
-    url = "https://example.com/test"
-    headers = {"Content-Type": "application/json"}
-    payload = {"key": "value"}
+def list_files_in_container():
+    """List all files in the container for debugging purposes.
+    Walk through the root directory and print each file found.
+    """
+    for root, dirs, files in os.walk("/"):
+        for file in files:
+            print(os.path.join(root, file))
 
-    # Use local certificates directly from the root directory.
+def run_ssl_server():
+    """Run the application using OpenSSL sockets for encryption."""
     cert_file = "./local-cert.pem"
     key_file = "./local-key.pem"
 
@@ -71,10 +76,31 @@ if __name__ == "__main__":
     if not os.path.exists(cert_file) or not os.path.exists(key_file):
         raise FileNotFoundError(f"Missing SSL certificate files: {cert_file}, {key_file}")
 
-    try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload), verify=verify_ssl)
-        print(f"Request response: {response.status_code}, {response.text}")  # Debug log for request response.
-    except Exception as e:
-        print(f"Error making request: {e}")  # Debug log for errors.
-    # Run the FastAPI application with SSL context for secure communication.
-    uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile=cert_file, ssl_keyfile=key_file)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+        sock.bind(("0.0.0.0", 8443))
+        sock.listen(5)
+        print("SSL server running on https://0.0.0.0:8443")
+
+        with context.wrap_socket(sock, server_side=True) as ssock:
+            while True:
+                conn, addr = ssock.accept()
+                print(f"Connection established with {addr}")
+
+if __name__ == "__main__":
+    # Determine if HTTP, HTTPS, or OpenSSL socket should be used based on command-line arguments
+    use_https = "--https" in sys.argv
+    use_openssl = "--openssl" in sys.argv
+
+    if use_https:
+        print("Starting FastAPI server with HTTPS.")
+        # Run the FastAPI application with SSL context for secure communication.
+        uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile="./local-cert.pem", ssl_keyfile="./local-key.pem")
+    elif use_openssl:
+        print("Starting server with OpenSSL sockets.")
+        run_ssl_server()
+    else:
+        print("Starting FastAPI server with HTTP.")
+        uvicorn.run(app, host="0.0.0.0", port=8000)
