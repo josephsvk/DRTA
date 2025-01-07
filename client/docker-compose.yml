@@ -9,7 +9,9 @@ services:
     stdin_open: true  # Enable standard input
     tty: true         # Enable TTY
     restart: unless-stopped
+    networks:
+      - traefik-net
+
 networks:
-  default:
-    driver: bridge
-    
+  traefik-net:
+    external: true

@@ -11,6 +11,7 @@ COPY . .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -v -r requirements.txt --root-user-action=ignore
 RUN apt-get update && apt-get install -y openssh-client
+RUN apt-get update && apt-get install -y curl
 
 # Default command
 ENTRYPOINT ["python", "main.py", "--idle"]

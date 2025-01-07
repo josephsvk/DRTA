@@ -26,6 +26,7 @@ python form.py
 ### Manuálne testovanie: 
 Ak potrebujete debugovať, spustite kontajner s príkazom:
 sudo docker run -it --rm --name test-drta-client client-drta-client bash
+docker exec -it DRTA-Client sh
 
 ### logs : 
 docker logs DRTA-Client
