@@ -2,6 +2,7 @@ import os
 import logging
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.inspection import inspect
 
 # Logging Configuration
 logging.basicConfig(level=logging.INFO)
@@ -69,11 +70,8 @@ class ClientData(Base):
 # Create database tables
 try:
     logger.info("Creating database tables...")
-    if not engine.dialect.has_table(engine, "client_data"):
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created successfully.")
-    else:
-        logger.info("Tables already exist. Skipping creation.")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created successfully.")
 except Exception as e:
     logger.critical(f"Failed to create database tables: {e}")
     raise

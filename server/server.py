@@ -1,19 +1,13 @@
 import os
 import urllib3
 import json
-import requests
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 import pyotp
 from dotenv import load_dotenv
-import sys
-import uvicorn
-import ssl
-import socket
 import uuid
 import logging
-from sqlalchemy import create_engine, Column, String, Integer
-from sqlalchemy.orm import declarative_base, sessionmaker
+from database import SessionLocal, ClientData  # Import database logic from the separate script
 
 # Configure structured logging for better log management
 logging.basicConfig(
@@ -31,36 +25,6 @@ app = FastAPI()
 # Load environment variables from a .env file to store sensitive data securely.
 load_dotenv()
 
-# Initialize database with SQLCipher for encrypted data storage
-DB_PATH = "./secure_data.db"
-DB_KEY = os.getenv("DB_KEY", "default_secure_key")  # Database encryption key
-try:
-    logger.info("Initializing database engine...")
-    engine = create_engine(
-        f"sqlite+pysqlcipher://:{DB_KEY}@/{DB_PATH}",
-        connect_args={"check_same_thread": False},
-        future=True
-    )
-    Base = declarative_base()
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database initialized successfully.")
-except Exception as e:
-    logger.critical(f"Database initialization failed: {e}")
-    raise
-
-# Define the database model for storing client data.
-class ClientData(Base):
-    __tablename__ = "client_data"
-
-    id = Column(Integer, primary_key=True, index=True)
-    device_name = Column(String, nullable=False)
-    ipv6_address = Column(String, unique=True, nullable=False)
-    port = Column(Integer, unique=True, nullable=False)
-    location = Column(String, nullable=False)
-    function = Column(String, nullable=False)
-    unique_id = Column(String, unique=True, nullable=False)
-
 # Disable SSL warnings to avoid unnecessary warnings during development
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -71,7 +35,7 @@ if not SHARED_SECRET:
     raise ValueError("TOTP_SECRET environment variable not set")  # Ensure the key is defined.
 
 @app.post("/verify-totp")
-async def verify_totp(request: TOTPRequest):
+async def verify_totp(request: BaseModel):
     """Verify a submitted TOTP code against the shared secret."""
     logger.info("Received TOTP verification request.")
     totp = pyotp.TOTP(SHARED_SECRET)  # Initialize the TOTP instance.
