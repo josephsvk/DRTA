@@ -10,16 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout kódu z repozitára
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Nastavenie environmentálneho súboru
-      - name: Setup .env file
-        run: |
-          echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > server/.env
-      
       - name: Debug secrets
         run: echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}"
-        
 
+      - name: Setup server/.env file
+        run: |
+          echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > server/.env
+
+      - name: Verify server/.env file
+        run: cat server/.env
