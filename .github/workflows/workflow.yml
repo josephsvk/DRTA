@@ -1,7 +1,9 @@
 name: Build and Run TOTP Server with Docker Compose
 
 on:
-  workflow_dispatch: # Manuálne spustenie workflowu
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-and-run:
@@ -17,12 +19,3 @@ jobs:
         run: |
           echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > .env
 
-      # 3. Build a spustenie kontajnera pomocou Docker Compose
-      - name: Build and run with Docker Compose
-        run: |
-          docker-compose up -d --build
-
-      # 4. Overenie bežiaceho kontajnera
-      - name: Check running services
-        run: |
-          docker ps
