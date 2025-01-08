@@ -13,11 +13,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Check if server/.env exists
+        run: |
+          if [ -f "server/.env" ]; then
+            echo "server/.env exists"
+          else
+            echo "server/.env does not exist"
+            exit 1
+          fi
+
       - name: Debug secrets
         run: echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}"
 
       - name: Setup server/.env file
         run: |
+          mkdir -p server
           echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > server/.env
 
       - name: Verify server/.env file
