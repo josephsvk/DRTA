@@ -13,8 +13,7 @@ import socket
 import uuid
 import logging
 from sqlalchemy import create_engine, Column, String, Integer
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Configure structured logging for better log management
 logging.basicConfig(
@@ -36,11 +35,18 @@ load_dotenv()
 DB_PATH = "./secure_data.db"
 DB_KEY = os.getenv("DB_KEY", "default_secure_key")  # Database encryption key
 try:
-    engine = create_engine(f"sqlite+pysqlcipher://:{DB_KEY}@/{DB_PATH}", connect_args={"check_same_thread": False})
+    logger.info("Initializing database engine...")
+    engine = create_engine(
+        f"sqlite+pysqlcipher://:{DB_KEY}@/{DB_PATH}",
+        connect_args={"check_same_thread": False},
+        future=True
+    )
     Base = declarative_base()
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized successfully.")
 except Exception as e:
-    logger.critical(f"Failed to initialize the database: {e}")
+    logger.critical(f"Database initialization failed: {e}")
     raise
 
 # Define the database model for storing client data.
@@ -54,13 +60,6 @@ class ClientData(Base):
     location = Column(String, nullable=False)
     function = Column(String, nullable=False)
     unique_id = Column(String, unique=True, nullable=False)
-
-# Create database tables if they don't exist already
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    logger.critical(f"Failed to create database tables: {e}")
-    raise
 
 # Disable SSL warnings to avoid unnecessary warnings during development
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
