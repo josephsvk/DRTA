@@ -17,5 +17,5 @@ jobs:
       # 2. Nastavenie environmentálneho súboru
       - name: Setup .env file
         run: |
-          echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > .env
+          echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > server/.env
 
