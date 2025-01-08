@@ -18,4 +18,8 @@ jobs:
       - name: Setup .env file
         run: |
           echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}" > server/.env
+      
+      - name: Debug secrets
+        run: echo "TOTP_SECRET=${{ secrets.TOTP_SECRET }}"
+        
 
