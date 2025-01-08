@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
-  totp-server:
+  drta-server:
     build:
       context: .  # Cesta k priečinku s Dockerfile
       dockerfile: Dockerfile
     container_name: totp-server
     ports:
-      - "8000:443"
+      - "443:443"
     env_file:
       - .env
     restart: unless-stopped

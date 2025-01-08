@@ -10,97 +10,165 @@ import sys
 import uvicorn
 import ssl
 import socket
+import uuid
+import logging
+from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# FastAPI instance for handling API requests. FastAPI provides a modern and high-performance API framework.
+# Configure structured logging for better log management
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# FastAPI instance for handling API requests.
 app = FastAPI()
 
-# Load environment variables from a .env file, if available. This ensures sensitive data can be stored outside the codebase.
+# Load environment variables from a .env file to store sensitive data securely.
 load_dotenv()
 
-# Determine the environment (local or production).
-env = os.getenv("ENV", "production")
-verify_ssl = False if env == "local" else True
+# Initialize database with SQLCipher for encrypted data storage
+DB_PATH = "./secure_data.db"
+DB_KEY = os.getenv("DB_KEY", "default_secure_key")  # Database encryption key
+try:
+    engine = create_engine(f"sqlite+pysqlcipher://:{DB_KEY}@/{DB_PATH}", connect_args={"check_same_thread": False})
+    Base = declarative_base()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+except Exception as e:
+    logger.critical(f"Failed to initialize the database: {e}")
+    raise
 
-# Disable SSL warnings to avoid warnings when making requests to servers with self-signed certificates.
+# Define the database model for storing client data.
+class ClientData(Base):
+    __tablename__ = "client_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_name = Column(String, nullable=False)
+    ipv6_address = Column(String, unique=True, nullable=False)
+    port = Column(Integer, unique=True, nullable=False)
+    location = Column(String, nullable=False)
+    function = Column(String, nullable=False)
+    unique_id = Column(String, unique=True, nullable=False)
+
+# Create database tables if they don't exist already
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.critical(f"Failed to create database tables: {e}")
+    raise
+
+# Disable SSL warnings to avoid unnecessary warnings during development
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Retrieve the TOTP shared secret key from the environment variables.
+# Retrieve the TOTP shared secret key from environment variables.
 SHARED_SECRET = os.getenv("TOTP_SECRET")
 if not SHARED_SECRET:
-    raise ValueError("TOTP_SECRET environment variable not set")  # Raise an error if the secret key is not defined.
-
-# Define a model for validating incoming TOTP verification requests. Pydantic is used for data validation.
-class TOTPRequest(BaseModel):
-    code: str  # The TOTP code submitted by the user.
+    logger.critical("TOTP_SECRET environment variable not set")  # Log critical error
+    raise ValueError("TOTP_SECRET environment variable not set")  # Ensure the key is defined.
 
 @app.post("/verify-totp")
 async def verify_totp(request: TOTPRequest):
-    """Endpoint to verify a submitted TOTP code.
-    Uses pyotp to validate the provided code against the shared secret.
-    """
-    print("Received TOTP verification request.")  # Debug log for incoming requests.
-    totp = pyotp.TOTP(SHARED_SECRET)  # Initialize the TOTP instance with the shared secret.
-    if totp.verify(request.code):  # Check if the submitted code is valid.
-        print("TOTP verification succeeded.")  # Debug log for successful validation.
-        return {"status": "valid"}  # Return a success response if the code is valid.
+    """Verify a submitted TOTP code against the shared secret."""
+    logger.info("Received TOTP verification request.")
+    totp = pyotp.TOTP(SHARED_SECRET)  # Initialize the TOTP instance.
+    if totp.verify(request.code):
+        logger.info("TOTP verification succeeded.")
+        return {"status": "valid"}  # Return success response if the code is valid.
     else:
-        print("TOTP verification failed.")  # Debug log for failed validation.
-        raise HTTPException(status_code=400, detail="Invalid TOTP code")  # Raise an error for invalid codes.
+        logger.warning("TOTP verification failed.")
+        raise HTTPException(status_code=400, detail="Invalid TOTP code")  # Return error for invalid code.
 
-@app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    """Endpoint to upload a file through FastAPI.
-    Saves the uploaded file locally.
-    """
-    print("Upload endpoint called.")  # Debug log for endpoint invocation.
-    file_location = f"./{file.filename}"
-    with open(file_location, "wb") as f:
-        f.write(await file.read())
-    print(f"File saved: {file.filename}")  # Debug log for file save success.
-    return {"message": "File uploaded successfully"}  # Return a success message.
+@app.post("/process-form-data")
+async def process_form_data(file: UploadFile = File(...)):
+    """Process form_data.json content and store it in the database."""
+    logger.info("Processing form_data.json.")
+    file_content = await file.read()
+    logger.debug(f"Received file content: {file_content.decode('utf-8')}")  # Debug log of file content
+    data = json.loads(file_content.decode('utf-8'))  # Parse the uploaded JSON data.
 
-def list_files_in_container():
-    """List all files in the container for debugging purposes.
-    Walk through the root directory and print each file found.
-    """
-    for root, dirs, files in os.walk("/"):
-        for file in files:
-            print(os.path.join(root, file))
+    # Retrieve necessary environment variables for processing
+    env_prefix = os.getenv("IPV6_PREFIX", "default_prefix")
+    port_range_start = int(os.getenv("PORT_RANGE_START", "8000"))
+    port_range_end = int(os.getenv("PORT_RANGE_END", "9000"))
 
-def run_ssl_server():
-    """Run the application using OpenSSL sockets for encryption."""
-    cert_file = "./local-cert.pem"
-    key_file = "./local-key.pem"
+    # Extract values from the uploaded file
+    device_name = data.get("device_name")
+    ipv6_prefix = data.get("ipv6_prefix")
+    location = data.get("location")
+    function = data.get("function")
 
-    # Verify the existence of certificates
-    if not os.path.exists(cert_file) or not os.path.exists(key_file):
-        raise FileNotFoundError(f"Missing SSL certificate files: {cert_file}, {key_file}")
+    # Validate that the IPv6 prefix matches the environment prefix
+    if ipv6_prefix != env_prefix:
+        logger.error(f"Invalid IPv6 prefix provided: {ipv6_prefix}. Expected: {env_prefix}.")
+        return {"error": "Invalid IPv6 prefix. Process terminated."}
 
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+    session = SessionLocal()
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
-        sock.bind(("0.0.0.0", 8443))
-        sock.listen(5)
-        print("SSL server running on https://0.0.0.0:8443")
+    try:
+        # Generate a new unique port within the defined range
+        for port in range(port_range_start, port_range_end):
+            if not session.query(ClientData).filter_by(port=port).first():
+                logger.debug(f"Selected unique port: {port}")  # Log selected port
+                break
+        else:
+            logger.error("No available ports in the defined range.")
+            return {"error": "No available ports in the defined range."}
 
-        with context.wrap_socket(sock, server_side=True) as ssock:
-            while True:
-                conn, addr = ssock.accept()
-                print(f"Connection established with {addr}")
+        # Generate a new unique IPv6 address
+        for i in range(1, 65536):
+            ipv6_address = f"{ipv6_prefix}:{i}"
+            if not session.query(ClientData).filter_by(ipv6_address=ipv6_address).first():
+                logger.debug(f"Generated unique IPv6 address: {ipv6_address}")  # Log selected IPv6 address
+                break
+        else:
+            logger.error("No available IPv6 addresses in the defined range.")
+            return {"error": "No available IPv6 addresses in the defined range."}
+
+        # Generate a unique identifier for the client
+        unique_id = str(uuid.uuid4())
+        logger.debug(f"Generated unique ID: {unique_id}")  # Log unique ID
+
+        # Save the client data to the database
+        new_client = ClientData(
+            device_name=device_name,
+            ipv6_address=ipv6_address,
+            port=port,
+            location=location,
+            function=function,
+            unique_id=unique_id
+        )
+        session.add(new_client)
+        session.commit()
+        logger.info(f"Client data saved successfully: {unique_id}")
+
+        # Return processed data to the client
+        return {
+            "message": "Data processed successfully",
+            "data": {
+                "device_name": device_name,
+                "ipv6_address": ipv6_address,
+                "port": port,
+                "location": location,
+                "function": function,
+                "unique_id": unique_id
+            }
+        }
+    except Exception as e:
+        try:
+            session.rollback()
+            logger.error(f"Transaction rolled back due to error: {e}")
+        except Exception as rollback_error:
+            logger.critical(f"Rollback failed: {rollback_error}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        session.close()
+        logger.debug("Database session closed.")  # Log session closure
 
 if __name__ == "__main__":
-    # Determine if HTTP, HTTPS, or OpenSSL socket should be used based on command-line arguments
-    use_https = "--https" in sys.argv
-    use_openssl = "--openssl" in sys.argv
-
-    if use_https:
-        print("Starting FastAPI server with HTTPS.")
-        # Run the FastAPI application with SSL context for secure communication.
-        uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile="./local-cert.pem", ssl_keyfile="./local-key.pem")
-    elif use_openssl:
-        print("Starting server with OpenSSL sockets.")
-        run_ssl_server()
-    else:
-        print("Starting FastAPI server with HTTP.")
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info("Starting FastAPI server with HTTPS.")
+    uvicorn.run(app, host="0.0.0.0", port=443, ssl_certfile="./local-cert.pem", ssl_keyfile="./local-key.pem")

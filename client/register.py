@@ -8,7 +8,7 @@ load_dotenv()
 
 def verify_totp():
     # Retrieve the TOTP URL from environment variables or use the default
-    url = os.getenv("TOTP_URL", "https://127.0.0.1:8000/verify-totp")
+    url = os.getenv("TOTP_URL", "https://drta-server/verify-totp")
     headers = {"Content-Type": "application/json"}  # Set the request headers
 
     while True:
@@ -42,7 +42,7 @@ def verify_totp():
 
 def send_form_data():
     file_path = "form_data.json"  # Path to the JSON file containing form data
-    upload_url = os.getenv("UPLOAD_URL", "http://0.0.0.0:8000/upload")  # Retrieve the upload URL from environment variables
+    upload_url = os.getenv("UPLOAD_URL", "https://drta-server/upload")  # Retrieve the upload URL from environment variables
     
     try:
         print(f"[DEBUG] Upload URL: {upload_url}")
