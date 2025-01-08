@@ -1,8 +1,9 @@
 import os
 import logging
+import sqlite3  # Import SQLite to define the custom connection
+import re
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.inspection import inspect
 
 # Logging Configuration
 logging.basicConfig(level=logging.INFO)
@@ -12,24 +13,27 @@ logger = logging.getLogger("DatabaseLogger")
 DB_PATH = os.getenv("DB_PATH", "./secure_data.db")  # Path to the SQLite database file
 DB_KEY = os.getenv("DB_KEY", "default_secure_key")  # Encryption key for the database
 
-def generate_database_url(db_key, db_path):
+def connect(db_path, db_key):
     """
-    Generates the database URL.
+    Custom connection function for SQLite.
     Args:
-        db_key (str): The encryption key for the database.
-        db_path (str): The path to the SQLite database file.
+        db_path (str): Path to the database file.
+        db_key (str): Encryption key for the database.
     Returns:
-        str: The formatted database URL.
+        sqlite3.Connection: The SQLite connection.
     """
-    return f"sqlite+pysqlcipher://:{db_key}@/{db_path}"
+    conn = sqlite3.connect(db_path)  # Pripojenie k SQLite databáze
+    conn.execute(f"PRAGMA key='{db_key}'")  # Nastavenie šifrovacieho kľúča
+    conn.create_function("regexp", 2, lambda x, y: bool(re.search(x, y)))  # Registrácia 'regexp' funkcie
+    return conn
 
 # Initialize database connection
 try:
     logger.info("Initializing database engine...")
     engine = create_engine(
-        generate_database_url(DB_KEY, DB_PATH),
+        "sqlite+pysqlcipher:///path/to/secure.db",
+        creator=lambda: connect(DB_PATH, DB_KEY),
         connect_args={"check_same_thread": False},
-        future=True
     )
     Base = declarative_base()
     SessionLocal = sessionmaker(autocommit=True, autoflush=False, bind=engine)

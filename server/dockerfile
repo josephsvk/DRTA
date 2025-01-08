@@ -16,10 +16,10 @@ RUN apk add --no-cache \
     sqlcipher \
     sqlcipher-dev \
     py3-pip
-RUN pip install --upgrade pip
 
 # Inštalácia závislostí
-RUN pip install --no-cache-dir -v -r requirements.txt --root-user-action=ignore
+RUN pip install --no-cache-dir -r requirements.txt
+
 
 # Run the application
 #--https --openssl
