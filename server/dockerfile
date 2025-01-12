@@ -23,5 +23,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the application
 #--https --openssl
-ENTRYPOINT ["python", "server.py", "--https"] 
+ENTRYPOINT ["python", "app.py", "--https"] 
 
